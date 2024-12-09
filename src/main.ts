@@ -43,11 +43,11 @@ const centralCube = new THREE.Mesh(cubeGeometry, lightMaterial);
 scene.add(centralCube);
 
 // Move the central cube's position
-centralCube.position.set(0.2, 0.5, 1);
+centralCube.position.set(0.2, 0.5, 0);
 
 // Add point light from the central cube
-const pointLight = new THREE.PointLight(0xffffff, 50, 100); // Higher intensity and larger radius
-pointLight.position.set(0.2, 0.5, 1); // Ensure the light is at the same position as the cube
+const pointLight = new THREE.PointLight(0xffffff, 10, 1); // Higher intensity and larger radius
+pointLight.position.set(0.2, 0.5, 0); // Ensure the light is at the same position as the cube
 scene.add(pointLight);
 
 // Load font for 3D text
@@ -172,6 +172,36 @@ scene.add(ambientLight);
 // Set camera position
 camera.position.z = 5;
 
+// Interactivity Variables
+let cubePositionY = centralCube.position.y;
+let pointLightPositionY = pointLight.position.y;
+let cameraPositionX = camera.position.x;
+
+// Keyboard event listener for cube and camera movement
+window.addEventListener('keydown', (event) => {
+  switch(event.key) {
+      case 'w': // Move cube upward
+          cubePositionY += 2;
+          break;
+      case 's': // Move cube downward
+          cubePositionY -= 2;
+          break;
+      case 'a': // Move camera left
+          cameraPositionX -= 0.1;
+          break;
+      case 'd': // Move camera right
+          cameraPositionX += 0.1;
+          break;
+  }
+
+  // Apply the changes to cube and point light
+  centralCube.position.y = cubePositionY;
+  camera.position.x = cameraPositionX;
+  
+  // Update the light position to match the cube's position
+  pointLight.position.set(centralCube.position.x, centralCube.position.y, centralCube.position.z);
+});
+
 
 // Animation loop
 function animate() {
@@ -193,4 +223,3 @@ window.addEventListener('resize', () => {
     renderer.setSize(window.innerWidth, window.innerHeight);
     composer.setSize(window.innerWidth, window.innerHeight);
 });
-
