@@ -24,8 +24,16 @@ composer.addPass(bloomPass);
 // Shader material for central cube (light source)
 const lightMaterial = new THREE.ShaderMaterial({
     uniforms: { time: { value: 0 } },
-    vertexShader: `void main() { gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0); }`,
-    fragmentShader: `void main() { gl_FragColor = vec4(1.0, 1.0, 1.0, 1.0); }`,
+    vertexShader: `
+        void main() {
+            gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+        }
+    `,
+    fragmentShader: `
+        void main() {
+            gl_FragColor = vec4(1.0, 1.0, 1.0, 1.0); // Full white glowing
+        }
+    `,
     transparent: true,
 });
 
@@ -33,34 +41,127 @@ const lightMaterial = new THREE.ShaderMaterial({
 const cubeGeometry = new THREE.BoxGeometry(0.5, 0.5, 0.5);
 const centralCube = new THREE.Mesh(cubeGeometry, lightMaterial);
 scene.add(centralCube);
-centralCube.position.set(0, 0, 0);
+
+// Move the central cube's position
+centralCube.position.set(0.2, 0.5, 1);
 
 // Add point light from the central cube
-const pointLight = new THREE.PointLight(0xffffff, 10, 1);
-pointLight.position.set(0, 0, 0);
+const pointLight = new THREE.PointLight(0xffffff, 50, 100); // Higher intensity and larger radius
+pointLight.position.set(0.2, 0.5, 1); // Ensure the light is at the same position as the cube
 scene.add(pointLight);
 
 // Load font for 3D text
 const loader = new FontLoader();
 loader.load('https://threejs.org/examples/fonts/helvetiker_regular.typeface.json', (font) => {
-    const letterMaterial = new THREE.MeshBasicMaterial({ color: 0x00a19c }); // Example color
+
+    // Alphabet ShaderMaterial for 'L' (Plastic-like)
+    const letterMaterial = new THREE.ShaderMaterial({
+        uniforms: {
+            ambientIntensity: { value: 0.921 },
+            diffuseColor: { value: new THREE.Color(0x00a19c) },
+            lightPosition: { value: pointLight.position }
+        },
+        vertexShader: `
+            varying vec3 vNormal;
+            varying vec3 vPosition;
+
+            void main() {
+                vNormal = normalize(normalMatrix * normal);
+                vPosition = (modelViewMatrix * vec4(position, 1.0)).xyz;
+                gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+            }
+        `,
+        fragmentShader: `
+            uniform float ambientIntensity;
+            uniform vec3 diffuseColor;
+            uniform vec3 lightPosition;
+            varying vec3 vNormal;
+            varying vec3 vPosition;
+
+            void main() {
+                // Ambient lighting
+                vec3 ambient = ambientIntensity * diffuseColor;
+
+                // Diffuse lighting based on light position
+                vec3 lightDir = normalize(lightPosition - vPosition);
+                float diff = max(dot(vNormal, lightDir), 0.0);
+                vec3 diffuse = diff * diffuseColor;
+
+                // Plastic-like specular highlight (Phong model)
+                vec3 viewDir = normalize(-vPosition);
+                vec3 reflectDir = reflect(-lightDir, vNormal);
+                float spec = pow(max(dot(viewDir, reflectDir), 0.0), 16.0);
+                vec3 specular = spec * vec3(0.7); // Specular color (plastic)
+
+                gl_FragColor = vec4(ambient + diffuse + specular, 1.0);
+            }
+        `,
+        side: THREE.DoubleSide
+    });
+
+    // Create 'L' character geometry
     const letterGeometry = new TextGeometry('L', {
         font: font,
         size: 1,
         height: 0.2,
     });
     const letterMesh = new THREE.Mesh(letterGeometry, letterMaterial);
-    letterMesh.position.set(-2, 0, 0); // Position left
+    letterMesh.position.set(-2, 0, 0);
     scene.add(letterMesh);
 
-    const numberMaterial = new THREE.MeshBasicMaterial({ color: 0xff5e63 }); // Complementary color
+    // Digit ShaderMaterial for '7' (Metal-like)
+    const numberMaterial = new THREE.ShaderMaterial({
+        uniforms: {
+            ambientIntensity: { value: 0.921 },
+            diffuseColor: { value: new THREE.Color(0xff5e63) },
+            lightPosition: { value: pointLight.position }
+        },
+        vertexShader: `
+            varying vec3 vNormal;
+            varying vec3 vPosition;
+
+            void main() {
+                vNormal = normalize(normalMatrix * normal);
+                vPosition = (modelViewMatrix * vec4(position, 1.0)).xyz;
+                gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+            }
+        `,
+        fragmentShader: `
+            uniform float ambientIntensity;
+            uniform vec3 diffuseColor;
+            uniform vec3 lightPosition;
+            varying vec3 vNormal;
+            varying vec3 vPosition;
+
+            void main() {
+                // Ambient lighting
+                vec3 ambient = ambientIntensity * diffuseColor;
+
+                // Diffuse lighting based on light position
+                vec3 lightDir = normalize(lightPosition - vPosition);
+                float diff = max(dot(vNormal, lightDir), 0.0);
+                vec3 diffuse = diff * diffuseColor;
+
+                // Metallic specular highlight (Phong model)
+                vec3 viewDir = normalize(-vPosition);
+                vec3 reflectDir = reflect(-lightDir, vNormal);
+                float spec = pow(max(dot(viewDir, reflectDir), 0.0), 32.0); // High shininess for metal
+                vec3 specular = spec * diffuseColor; // Metal-like specular
+
+                gl_FragColor = vec4(ambient + diffuse + specular, 1.0);
+            }
+        `,
+        side: THREE.DoubleSide
+    });
+
+    // Create '7' character geometry
     const numberGeometry = new TextGeometry('7', {
         font: font,
         size: 1,
         height: 0.2,
     });
     const numberMesh = new THREE.Mesh(numberGeometry, numberMaterial);
-    numberMesh.position.set(2, 0, 0); // Position right
+    numberMesh.position.set(2, 0, 0);
     scene.add(numberMesh);
 });
 
@@ -70,6 +171,7 @@ scene.add(ambientLight);
 
 // Set camera position
 camera.position.z = 5;
+
 
 // Animation loop
 function animate() {
@@ -91,3 +193,4 @@ window.addEventListener('resize', () => {
     renderer.setSize(window.innerWidth, window.innerHeight);
     composer.setSize(window.innerWidth, window.innerHeight);
 });
+
