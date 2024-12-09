@@ -43,9 +43,8 @@ scene.add(pointLight);
 // Load font for 3D text
 const loader = new FontLoader();
 loader.load('https://threejs.org/examples/fonts/helvetiker_regular.typeface.json', (font) => {
-    // Create the alphabet (example: 'i' for name) mesh
     const letterMaterial = new THREE.MeshBasicMaterial({ color: 0x00a19c }); // Example color
-    const letterGeometry = new TextGeometry('i', {
+    const letterGeometry = new TextGeometry('L', {
         font: font,
         size: 1,
         height: 0.2,
@@ -54,9 +53,8 @@ loader.load('https://threejs.org/examples/fonts/helvetiker_regular.typeface.json
     letterMesh.position.set(-2, 0, 0); // Position left
     scene.add(letterMesh);
 
-    // Create the digit (example: '6' for student ID) mesh
     const numberMaterial = new THREE.MeshBasicMaterial({ color: 0xff5e63 }); // Complementary color
-    const numberGeometry = new TextGeometry('6', {
+    const numberGeometry = new TextGeometry('7', {
         font: font,
         size: 1,
         height: 0.2,
